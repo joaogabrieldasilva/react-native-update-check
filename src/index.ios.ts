@@ -57,6 +57,4 @@ const checkForUpdate = async (bundleId: string, currentVersion: string) => {
   return needUpdate(latestVersion, currentVersion);
 };
 
-checkForUpdate('br.com.doctorclin', '1.2.3');
-
-export { goToStorePage, needUpdate };
+export { goToStorePage, checkForUpdate };
