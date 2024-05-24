@@ -1,83 +1,72 @@
 import { Linking } from 'react-native';
 
-const fetchLatestVersion = async (bundleId: string) => {
-  try {
-    const response = await fetch(
-      'https://itunes.apple.com/lookup?' +
-        new URLSearchParams({
-          bundleId,
-        })
-    );
-    const data = (await response.json()) as { results: { version: string }[] };
+type AppStoreResult = { version: string; trackId: string };
 
-    const appVersion = data.results[0]?.version;
+export class ReactNativeUpdateCheck {
+  private readonly bundleId: string;
+  private latestVersion: string | null = null;
+  private appId: string | null = null;
 
-    if (!appVersion)
-      throw new Error(`Failed to get app version from bundleId: ${bundleId}`);
+  constructor(bundleId: string) {
+    this.bundleId = bundleId;
 
-    return {
-      latestVersion: appVersion,
-    };
-  } catch (error) {
-    throw error;
+    this.fetchAppData();
   }
-};
 
-const getAppId = async (bundleId: string) => {
-  try {
-    const response = await fetch(
-      'https://itunes.apple.com/lookup?' +
-        new URLSearchParams({
-          bundleId,
-        })
-    );
-    const data = (await response.json()) as { results: { trackId: string }[] };
+  private async fetchAppData() {
+    try {
+      const response = await fetch(
+        'https://itunes.apple.com/lookup?' +
+          new URLSearchParams({
+            bundleId: this.bundleId,
+          })
+      );
+      const data = (await response.json()) as {
+        results: AppStoreResult[];
+      };
 
-    const appId = data.results[0]?.trackId;
+      const result = data?.results[0];
 
-    if (!appId)
-      throw new Error(`Failed to get appId from bundleId: ${bundleId}`);
+      if (!result)
+        throw new Error(
+          `Failed to get app data from bundleId: ${this.bundleId}`
+        );
 
-    return {
-      appId,
-    };
-  } catch (error) {
-    throw error;
-  }
-};
-
-const goToStorePage = async (bundleId: string) => {
-  const { appId } = await getAppId(bundleId);
-
-  const appStoreURI = `itms-apps://apps.apple.com/app/id${appId}?mt=8`;
-  const appStoreURL = `https://apps.apple.com/app/id${appId}?mt=8`;
-
-  // itms-apps must be added to ios InfoPlist
-  Linking.canOpenURL(appStoreURI).then((supported) => {
-    if (supported) {
-      Linking.openURL(appStoreURI);
-    } else {
-      Linking.openURL(appStoreURL);
-    }
-  });
-};
-
-const needUpdate = (latestVersion: string, currentVersion: string) => {
-  const currentVersionArray = currentVersion.split('.');
-  const latestVersionArray = latestVersion.split('.');
-
-  for (let i = 0; i < currentVersionArray.length; i++) {
-    if (latestVersionArray[i]! > currentVersionArray[i]!) {
-      return true;
+      this.latestVersion = result.version;
+      this.appId = result.trackId;
+    } catch (error) {
+      throw error;
     }
   }
-  return false;
-};
 
-const checkForUpdate = async (bundleId: string, currentVersion: string) => {
-  const { latestVersion } = await fetchLatestVersion(bundleId);
+  async goToStorePage() {
+    const appStoreURI = `itms-apps://apps.apple.com/app/id${this.appId}?mt=8`;
+    const appStoreURL = `https://apps.apple.com/app/id${this.appId}?mt=8`;
 
-  return needUpdate(latestVersion, currentVersion);
-};
+    Linking.canOpenURL(appStoreURI).then((supported) => {
+      if (supported) {
+        Linking.openURL(appStoreURI);
+      } else {
+        Linking.openURL(appStoreURL);
+      }
+    });
+  }
 
-export { goToStorePage, checkForUpdate };
+  private needsUpdate(currentVersion: string) {
+    const currentVersionArray = currentVersion.split('.');
+    const latestVersionArray = this.latestVersion!.split('.');
+
+    for (let i = 0; i < currentVersionArray.length; i++) {
+      if (latestVersionArray[i]! > currentVersionArray[i]!) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async checkForUpdate(currentVersion: string) {
+    return this.needsUpdate(currentVersion);
+  }
+}
+
+export default ReactNativeUpdateCheck;
