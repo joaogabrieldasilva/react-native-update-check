@@ -1,5 +1,3 @@
-// import { Linking } from 'react-native';
-
 import { Linking } from 'react-native';
 
 const fetchLatestVersion = async (bundleId: string) => {
@@ -41,7 +39,7 @@ const getAppId = async (bundleId: string) => {
       throw new Error(`Failed to get appId from bundleId: ${bundleId}`);
 
     return {
-      latestVersion: appId,
+      appId,
     };
   } catch (error) {
     throw error;
@@ -49,7 +47,7 @@ const getAppId = async (bundleId: string) => {
 };
 
 const goToStorePage = async (bundleId: string) => {
-  const appId = await getAppId(bundleId);
+  const { appId } = await getAppId(bundleId);
 
   const appStoreURI = `itms-apps://apps.apple.com/app/id${appId}?mt=8`;
   const appStoreURL = `https://apps.apple.com/app/id${appId}?mt=8`;

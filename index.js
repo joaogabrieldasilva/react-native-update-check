@@ -1,3 +1,3 @@
-import Module from './src';
+import Module from './src/index.ios';
 
 export default Module;
