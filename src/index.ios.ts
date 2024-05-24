@@ -1,11 +1,9 @@
-import { Linking } from 'react-native';
-
 type AppStoreResult = { version: string; trackId: string };
 
 export class ReactNativeUpdateCheck {
-  private readonly bundleId: string;
-  private latestVersion: string | null = null;
-  private appId: string | null = null;
+  readonly bundleId: string;
+  latestVersion: string | null = null;
+  storeUrl: string | null = null;
 
   constructor(bundleId: string) {
     this.bundleId = bundleId;
@@ -33,23 +31,10 @@ export class ReactNativeUpdateCheck {
         );
 
       this.latestVersion = result.version;
-      this.appId = result.trackId;
+      this.storeUrl = `https://apps.apple.com/app/id${result.trackId}?mt=8`;
     } catch (error) {
       throw error;
     }
-  }
-
-  async goToStorePage() {
-    const appStoreURI = `itms-apps://apps.apple.com/app/id${this.appId}?mt=8`;
-    const appStoreURL = `https://apps.apple.com/app/id${this.appId}?mt=8`;
-
-    Linking.canOpenURL(appStoreURI).then((supported) => {
-      if (supported) {
-        Linking.openURL(appStoreURI);
-      } else {
-        Linking.openURL(appStoreURL);
-      }
-    });
   }
 
   private needsUpdate(currentVersion: string) {
